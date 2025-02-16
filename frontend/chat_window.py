@@ -29,6 +29,8 @@ class WebSocketClient(QThread):
 class ChatWindow(QWidget):
     def __init__(self, name, age):
         super().__init__()
+        self.name = name
+        self.age = age
         self.init_ui()
         self.websocket_client = WebSocketClient("ws://82.181.21.121:8000/ws")
         self.websocket_client.message_received.connect(self.display_message)
@@ -55,15 +57,17 @@ class ChatWindow(QWidget):
     def send_message(self):
         message = self.message_entry.text()
         if message:
-            self.chat_display.append(f"you: {message}")
+            self.chat_display.append(f"{self.name}: {message}")
             self.message_entry.clear()
-            asyncio.run(self.websocket_client.websocket.send(message))
+            asyncio.run(self.websocket_client.websocket.send(f"{self.name}: {message}"))
 
     def display_message(self, message):
         self.chat_display.append(message)
 
 if __name__ == "__main__":
     app = QApplication([])
-    chat_window = ChatWindow()
+    info = client.Information()
+    name, age = info.get_info()
+    chat_window = ChatWindow(name, age)
     chat_window.show()
     app.exec()
