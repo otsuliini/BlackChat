@@ -1,20 +1,21 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 
 app = FastAPI()
-clients = []
+clients = []  # List to store connected clients
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    clients.append(websocket)
+    await websocket.accept()  # Accept the WebSocket connection
+    clients.append(websocket)  # Add the new client to the list
     try:
         while True:
-            message = await websocket.receive_text()
+            message = await websocket.receive_text()  # Wait for a message
             for client in clients:
-                await client.send_text(message)
-    except Exception:
-        clients.remove(websocket)
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+                if client != websocket:  # Send message to all other clients (exclude sender)
+                    await client.send_text(message)  # Broadcast message
+    except WebSocketDisconnect:
+        clients.remove(websocket)  # Remove the client if it disconnects
+    except Exception as e:
+        clients.remove(websocket)  # Remove the client if an error occurs
+        print(f"Error: {e}")
